@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+# 个人作答草稿（隐藏模板里的 WIP），不进仓库
+practice/.exercises_blank.py
