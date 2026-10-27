@@ -193,12 +193,8 @@ class KMeans:
 # ============================== 3. Logistic regression ==============================
 def sigmoid(z: np.ndarray) -> np.ndarray:
     """Overflow-safe sigmoid. z: any shape float -> same shape, values in (0, 1)."""
-    out = np.empty_like(z, dtype=float)
-    pos = z >= 0
-    out[pos] = 1.0 / (1.0 + np.exp(-z[pos]))
-    ez = np.exp(z[~pos])                                        # z<0 so no overflow
-    out[~pos] = ez / (1.0 + ez)
-    return out
+    z = np.clip(z, -500, 500)                                   # exp(500) ~ 1e217 still fits in float64
+    return 1.0 / (1.0 + np.exp(-z))
 
 
 class LogisticRegression:
