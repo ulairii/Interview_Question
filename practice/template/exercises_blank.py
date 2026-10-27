@@ -102,7 +102,9 @@ class LogisticRegression:
 class DecisionTree:
     """CART classification tree with Gini impurity."""
 
-    def __init__(self, max_depth: int = 5, min_samples_split: int = 2) -> None:
+    def __init__(self, max_depth: int = 5, min_samples_split: int = 2,
+                 max_features: Optional[int] = None) -> None:
+        """max_features: 每次分裂随机只看这么多个特征（做随机森林时才用，先可忽略）。"""
         raise NotImplementedError
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "DecisionTree":
@@ -156,15 +158,17 @@ def nms(boxes: np.ndarray, scores: np.ndarray, thr: float = 0.5) -> List[int]:
 
 
 # ---------------------------------------------------------------- attention
-def causal_mask(T: int, S: int) -> torch.Tensor:
-    """(T, S) bool, True = may attend. T queries are the LAST T positions of S keys."""
+def causal_mask(T: int, S: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    """(T, S) bool, True = may attend. T queries are the LAST T positions of S keys. device 可选。"""
     raise NotImplementedError
 
 
 def scaled_dot_product_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
-                                 mask: Optional[torch.Tensor] = None
+                                 mask: Optional[torch.Tensor] = None,
+                                 dropout_p: float = 0.0, training: bool = False
                                  ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """q:(...,T,dk) k:(...,S,dk) v:(...,S,dv), mask bool True=keep. Return (out, weights)."""
+    """q:(...,T,dk) k:(...,S,dk) v:(...,S,dv), mask bool True=keep. Return (out, weights).
+    dropout_p / training：对注意力权重做 dropout（可选，先可忽略）。"""
     raise NotImplementedError
 
 
@@ -228,6 +232,11 @@ class LoRALinear(nn.Module):
         raise NotImplementedError
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError
+
+    @torch.no_grad()
+    def merge(self) -> None:
+        """把低秩更新并入 base.weight（之后推理零额外开销）。W += scale * B @ A"""
         raise NotImplementedError
 
 

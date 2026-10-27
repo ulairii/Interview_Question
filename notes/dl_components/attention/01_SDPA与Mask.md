@@ -247,6 +247,7 @@ avg = np.mean([scaled_dot_product_attention(q, k, v, dropout_p=0.2, training=Tru
 print(np.allclose(avg, w, atol=0.02))                                         # True
 ```
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

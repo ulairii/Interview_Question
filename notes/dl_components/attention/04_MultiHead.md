@@ -247,6 +247,7 @@ print(np.allclose(multi_head_attention(x, x, Wq, Wk, Wv, Wo, H, causal_mask(T, T
 
 自检的思路就是多头的定义本身：第 h 个头只用 `Wq/Wk/Wv` 的第 h 段列，各头算完沿最后一维拼起来，再乘 `Wo`。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

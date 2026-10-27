@@ -117,40 +117,38 @@ class KNNFast(KNN):
 
 # ============================== 2. K-Means ==============================
 class KMeans:
-    """K-Means. Steps of fit(): init -> [assign -> update -> check] x iters.
+    """K-Means. fit(): init -> [assign -> update -> check] x iters.
 
     init="random" picks K random samples; init="kmeans++" spreads the initial centers out.
+    Randomness comes from np.random (call np.random.seed(...) first if you need reproducibility).
     """
 
-    def __init__(self, n_clusters: int = 3, max_iters: int = 100, tol: float = 1e-4,
-                 init: str = "kmeans++", seed: Optional[int] = None) -> None:
-        self.k, self.max_iters, self.tol, self.init = n_clusters, max_iters, tol, init
-        self.rng = np.random.default_rng(seed)
+    def __init__(self, k: int = 3, max_iters: int = 100, tol: float = 1e-4,
+                 init: str = "kmeans++") -> None:
+        self.k, self.max_iters, self.tol, self.init = k, max_iters, tol, init
         self.centroids: np.ndarray                              # (K, D), set by fit
 
     # ---- step 1a: random initialisation ----
     def _init_random(self, X: np.ndarray) -> np.ndarray:
         """X: (N, D) -> (K, D), K distinct random samples."""
-        idx = self.rng.choice(len(X), self.k, replace=False)    # (K,)
+        idx = np.random.choice(len(X), self.k, replace=False)   # (K,)
         return X[idx].copy()
 
     # ---- step 1b: K-Means++ initialisation ----
     def _init_plusplus(self, X: np.ndarray) -> np.ndarray:
         """X: (N, D) -> (K, D). Next center is drawn with prob ∝ squared distance to nearest chosen center."""
-        N, D = X.shape
-        centroids = np.empty((self.k, D), dtype=X.dtype)
-        centroids[0] = X[self.rng.integers(N)]                  # first center: uniform random
-        for i in range(1, self.k):
-            d = pairwise_sq_dist(X, centroids[:i])              # (N, i) to chosen centers
+        N = len(X)
+        centroids = [X[np.random.randint(N)]]                   # first center: uniform random
+        for _ in range(1, self.k):
+            d = pairwise_sq_dist(X, np.array(centroids))        # (N, #chosen)
             nearest = d.min(axis=1)                             # (N,)
             total = nearest.sum()
             if total > 0:
                 probs = nearest / total                         # (N,) sums to 1
             else:                                               # all points identical to a center
                 probs = np.full(N, 1.0 / N)
-            chosen = self.rng.choice(N, p=probs)
-            centroids[i] = X[chosen]
-        return centroids
+            centroids.append(X[np.random.choice(N, p=probs)])
+        return np.array(centroids)                              # (K, D)
 
     # ---- step 2: assignment ----
     def _assign(self, X: np.ndarray) -> np.ndarray:
@@ -165,7 +163,7 @@ class KMeans:
         for j in range(self.k):
             members = X[labels == j]                            # (n_j, D)
             if len(members) == 0:                               # empty cluster: mean of [] would be NaN
-                new[j] = X[self.rng.integers(len(X))]
+                new[j] = X[np.random.randint(len(X))]
             else:
                 new[j] = members.mean(axis=0)
         return new
@@ -283,9 +281,8 @@ class DecisionTree:
 
 
 class RandomForest:
-    def __init__(self, n_trees: int = 10, max_depth: int = 5, seed: int = 0) -> None:
+    def __init__(self, n_trees: int = 10, max_depth: int = 5) -> None:
         self.n_trees, self.max_depth = n_trees, max_depth
-        self.rng = np.random.default_rng(seed)
         self.trees: List[DecisionTree] = []
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RandomForest":
@@ -293,7 +290,7 @@ class RandomForest:
         N, D = X.shape
         self.trees = []
         for _ in range(self.n_trees):
-            idx = self.rng.choice(N, N, replace=True)           # bootstrap
+            idx = np.random.choice(N, N, replace=True)          # bootstrap
             t = DecisionTree(self.max_depth, max_features=max(1, int(np.sqrt(D))))
             self.trees.append(t.fit(X[idx], y[idx]))
         return self
@@ -307,9 +304,8 @@ class RandomForest:
 # ============================== 5. GMM (EM) ==============================
 class GMM:
     def __init__(self, n_components: int = 3, max_iters: int = 100, tol: float = 1e-4,
-                 reg: float = 1e-6, seed: int = 0) -> None:
+                 reg: float = 1e-6) -> None:
         self.k, self.max_iters, self.tol, self.reg = n_components, max_iters, tol, reg
-        self.rng = np.random.default_rng(seed)
         self.mu: np.ndarray                                     # (K, D)
         self.cov: np.ndarray                                    # (K, D, D)
         self.pi: np.ndarray                                     # (K,)
@@ -349,7 +345,7 @@ class GMM:
     def fit(self, X: np.ndarray) -> "GMM":
         """X: (N, D) float. Returns self."""
         N, D = X.shape
-        self.mu = X[self.rng.choice(N, self.k, replace=False)]  # (K, D) random data points
+        self.mu = X[np.random.choice(N, self.k, replace=False)]  # (K, D) random data points
         self.cov = np.stack([np.eye(D)] * self.k)               # (K, D, D)
         self.pi = np.full(self.k, 1.0 / self.k)                 # (K,)
         prev = -np.inf
@@ -791,8 +787,8 @@ def top_p_filter(probs: np.ndarray, p: float) -> np.ndarray:
     return out / out.sum()
 
 
-def sample_top_k_top_p(logits: np.ndarray, k: int = 0, p: float = 1.0, temperature: float = 1.0,
-                       rng: Optional[np.random.Generator] = None) -> int:
+def sample_top_k_top_p(logits: np.ndarray, k: int = 0, p: float = 1.0,
+                       temperature: float = 1.0) -> int:
     """Sample one token id: temperature -> top-k -> softmax -> top-p -> draw.
 
     Args:
@@ -800,18 +796,16 @@ def sample_top_k_top_p(logits: np.ndarray, k: int = 0, p: float = 1.0, temperatu
         k: keep the top-k tokens (0 = disabled).
         p: nucleus mass in (0, 1] (1.0 = disabled).
         temperature: > 0; lower = sharper.
-        rng: optional numpy Generator for reproducibility.
     Returns:
         Sampled token id in [0, V).
     """
-    rng = rng or np.random.default_rng()
     z = logits / temperature                                    # (V,)
     if k > 0:
         z = top_k_filter(z, k)
     probs = softmax(z)                                          # (V,)
     if p < 1.0:
         probs = top_p_filter(probs, p)
-    return int(rng.choice(len(probs), p=probs))
+    return int(np.random.choice(len(probs), p=probs))
 
 
 def pca(X: np.ndarray, n_components: int) -> np.ndarray:

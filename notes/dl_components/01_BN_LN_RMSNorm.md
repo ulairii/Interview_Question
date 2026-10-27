@@ -25,6 +25,7 @@ y = gamma * (x - mean) / sqrt(var + eps) + beta
 - RMSNorm：`x · γ / sqrt(mean(x²)+ε)`，省去均值计算，LLM 常用，更快且效果相当。
 - 与 `torch.nn.BatchNorm1d/LayerNorm` 逐项对照通过（含 running_var）。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

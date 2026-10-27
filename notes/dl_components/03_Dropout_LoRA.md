@@ -13,6 +13,7 @@
 - 推理合并：`W = W₀ + (α/r)·BA`，零延迟（代码里 `merge()`，已验证合并前后输出一致）。
 - 参数量：`r(din+dout)` vs `din·dout`。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

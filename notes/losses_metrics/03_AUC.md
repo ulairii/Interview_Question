@@ -41,6 +41,7 @@ auc = (ranks[y==1].sum() - n_pos*(n_pos+1)/2) / (n_pos*n_neg)
 - PR 曲线同理，但在类别极不平衡时比 ROC 更敏感。
 - 代码已与 O(N²) 暴力解（含并列）及 sklearn 对照。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

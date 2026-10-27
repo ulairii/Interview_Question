@@ -50,6 +50,7 @@ d = np.sum((Xt[:, None, :] - self.X[None, :, :]) ** 2, axis=-1)   # (M,N)
 
 `KNNFast`（matmul + argpartition，k>N 安全）在 `code/ml_coding.py`。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

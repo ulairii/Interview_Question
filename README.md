@@ -16,6 +16,8 @@
 ├── code/
 │   ├── ml_coding.py            全部参考实现（带类型注解和 shape 注释）
 │   └── test_ml_coding.py       对照 PyTorch / torchvision / 暴力解的测试
+├── tools/
+│   └── sync_answers.py         由 code/ml_coding.py 重新生成各笔记里的「标准答案」折叠块
 └── practice/                 ← 模拟面试
     ├── exercises.py            空白题（在这里作答）
     ├── template/               干净模板（reset 用）

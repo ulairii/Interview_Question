@@ -31,7 +31,7 @@ m = KNNFast(500); m.fit(Xtr, ytr); m.predict(Xte)  # k > N must not crash
 print("knn ok")
 
 # KMeans
-km = KMeans(2, seed=0).fit(Xtr); lab = km.predict(Xtr)
+np.random.seed(0); km = KMeans(2).fit(Xtr); lab = km.predict(Xtr)
 assert (lab == ytr).all() or (lab == 1 - ytr).all()
 print("kmeans ok")
 
@@ -47,7 +47,7 @@ assert (RandomForest(5, 3).fit(Xtr, ytr).predict(Xte) == yte).all()
 print("tree/forest ok")
 
 # GMM vs sklearn if present
-g = GMM(2, seed=0).fit(Xtr)
+np.random.seed(0); g = GMM(2).fit(Xtr)
 assert np.isfinite(g.ll)
 try:
     from sklearn.mixture import GaussianMixture
@@ -181,7 +181,7 @@ print("box ok")
 
 # Sampling
 lg = np.array([5., 4., 0., -1.])
-assert {sample_top_k_top_p(lg, k=2, rng=np.random.default_rng(i)) for i in range(200)} <= {0, 1}
-assert {sample_top_k_top_p(lg, p=0.5, rng=np.random.default_rng(i)) for i in range(200)} == {0}
+assert {(np.random.seed(i), sample_top_k_top_p(lg, k=2))[1] for i in range(200)} <= {0, 1}
+assert {(np.random.seed(i), sample_top_k_top_p(lg, p=0.5))[1] for i in range(200)} == {0}
 print("sampling ok")
 print("ALL PASSED")

@@ -152,6 +152,7 @@ x2 = x.copy(); x2[:, -1] = 100
 print(np.allclose(self_attention(x2, Wq, Wk, Wv, causal=True)[:, :-1], out[:, :-1]))   # True
 ```
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

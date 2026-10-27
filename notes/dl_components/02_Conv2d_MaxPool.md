@@ -20,6 +20,7 @@ def conv2d(x: np.ndarray, w: np.ndarray, b: Optional[np.ndarray] = None,
 - 滑动窗口循环版（四重循环）先写出来也可，再说明向量化。
 - 已与 `F.conv2d`（stride 1/2、padding 0/1）和 `F.max_pool2d` 对照通过。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

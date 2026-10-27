@@ -204,6 +204,12 @@ def t_lora(m):
     lo.B.data.normal_()
     ref = lo.base(x) + (x @ lo.A.T @ lo.B.T) * (16.0 / 8)
     close(lo(x).detach(), ref.detach(), 1e-5, "scale = alpha / r")
+    before = lo(x).detach().clone()
+    try:
+        lo.merge(); lo.B.data.zero_()
+    except NotImplementedError:
+        return
+    close(lo(x).detach(), before, 1e-5, "merge(): output must be unchanged after folding B@A into the weight")
 
 
 def t_conv(m):

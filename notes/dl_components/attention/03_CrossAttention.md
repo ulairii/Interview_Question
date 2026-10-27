@@ -149,6 +149,7 @@ ctx2 = ctx.copy(); ctx2[1, 6:] = 100                                     # 改 p
 print(np.allclose(cross_attention(x, ctx2, Wq, Wk, Wv, ctx_mask), out))  # True
 ```
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

@@ -179,89 +179,6 @@ def _init_plusplus(self, X: np.ndarray) -> np.ndarray:
 | 数据量很大 | Mini-batch K-Means：每次用一小批更新中心 |
 | 更新步想全向量化 | `one_hot = np.eye(K)[labels]`；`sums = one_hot.T @ X`；`counts = one_hot.sum(0)`；`sums / np.maximum(counts[:, None], 1)`（空簇另处理）|
 
-## ✅ 面试简洁版标准答案（直接用 `np.random`）
-
-没有 `rng`、没有 `seed`，随机数全部直接用 `np.random.xxx`，面试时最省事。需要可复现时，在调用前写一行 `np.random.seed(0)` 即可。
-
-<details>
-<summary>点击展开简洁版（含 random / kmeans++ 两种初始化）</summary>
-
-```python
-import numpy as np
-
-
-def pairwise_sq_dist(P: np.ndarray, Q: np.ndarray) -> np.ndarray:
-    p_sq = np.sum(P ** 2, axis=1)                  # (N,)
-    q_sq = np.sum(Q ** 2, axis=1)                  # (K,)
-    cross = P @ Q.T                                # (N, K)
-    d = p_sq[:, None] + q_sq[None, :] - 2 * cross  # (N, K)
-    return np.maximum(d, 0.0)
-
-
-class KMeans:
-    def __init__(self, k: int, max_iters: int = 100, tol: float = 1e-4, init: str = "kmeans++") -> None:
-        self.k, self.max_iters, self.tol, self.init = k, max_iters, tol, init
-
-    def _init_random(self, X: np.ndarray) -> np.ndarray:
-        idx = np.random.choice(len(X), self.k, replace=False)
-        return X[idx].copy()                                   # (K, D)
-
-    def _init_plusplus(self, X: np.ndarray) -> np.ndarray:
-        N = len(X)
-        centroids = [X[np.random.randint(N)]]                  # 第一个中心：随机
-        for _ in range(1, self.k):
-            d = pairwise_sq_dist(X, np.array(centroids))       # (N, 已选个数)
-            nearest = d.min(axis=1)                            # (N,) 到最近已选中心
-            total = nearest.sum()
-            probs = nearest / total if total > 0 else np.full(N, 1.0 / N)
-            centroids.append(X[np.random.choice(N, p=probs)])
-        return np.array(centroids)                             # (K, D)
-
-    def _assign(self, X: np.ndarray) -> np.ndarray:
-        d = pairwise_sq_dist(X, self.centroids)                # (N, K)
-        return d.argmin(axis=1)                                # (N,)
-
-    def _update(self, X: np.ndarray, labels: np.ndarray) -> np.ndarray:
-        new = np.empty_like(self.centroids)                    # (K, D)
-        for j in range(self.k):
-            members = X[labels == j]                           # (n_j, D)
-            if len(members) == 0:                              # 空簇
-                new[j] = X[np.random.randint(len(X))]
-            else:
-                new[j] = members.mean(axis=0)
-        return new
-
-    def fit(self, X: np.ndarray) -> "KMeans":
-        if self.init == "random":
-            self.centroids = self._init_random(X)
-        else:
-            self.centroids = self._init_plusplus(X)
-        for _ in range(self.max_iters):
-            labels = self._assign(X)
-            new = self._update(X, labels)
-            shift = np.linalg.norm(new - self.centroids)
-            self.centroids = new
-            if shift < self.tol:
-                break
-        return self
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return self._assign(X)
-```
-
-用法：
-
-```python
-np.random.seed(0)                        # 可选，要可复现才写
-km = KMeans(k=3, init="random").fit(X)   # 阶段 1
-km = KMeans(k=3).fit(X)                  # 阶段 2：默认 kmeans++
-labels = km.predict(X)                   # (N,)
-```
-
-和 `rng` 版的区别只有随机数来源：`self.rng.choice` → `np.random.choice`，`self.rng.integers` → `np.random.randint`，没有 `seed` 参数。
-
-</details>
-
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 
@@ -294,40 +211,38 @@ def pairwise_sq_dist(P: np.ndarray, Q: np.ndarray) -> np.ndarray:
 
 
 class KMeans:
-    """K-Means. Steps of fit(): init -> [assign -> update -> check] x iters.
+    """K-Means. fit(): init -> [assign -> update -> check] x iters.
 
     init="random" picks K random samples; init="kmeans++" spreads the initial centers out.
+    Randomness comes from np.random (call np.random.seed(...) first if you need reproducibility).
     """
 
-    def __init__(self, n_clusters: int = 3, max_iters: int = 100, tol: float = 1e-4,
-                 init: str = "kmeans++", seed: Optional[int] = None) -> None:
-        self.k, self.max_iters, self.tol, self.init = n_clusters, max_iters, tol, init
-        self.rng = np.random.default_rng(seed)
+    def __init__(self, k: int = 3, max_iters: int = 100, tol: float = 1e-4,
+                 init: str = "kmeans++") -> None:
+        self.k, self.max_iters, self.tol, self.init = k, max_iters, tol, init
         self.centroids: np.ndarray                              # (K, D), set by fit
 
     # ---- step 1a: random initialisation ----
     def _init_random(self, X: np.ndarray) -> np.ndarray:
         """X: (N, D) -> (K, D), K distinct random samples."""
-        idx = self.rng.choice(len(X), self.k, replace=False)    # (K,)
+        idx = np.random.choice(len(X), self.k, replace=False)   # (K,)
         return X[idx].copy()
 
     # ---- step 1b: K-Means++ initialisation ----
     def _init_plusplus(self, X: np.ndarray) -> np.ndarray:
         """X: (N, D) -> (K, D). Next center is drawn with prob ∝ squared distance to nearest chosen center."""
-        N, D = X.shape
-        centroids = np.empty((self.k, D), dtype=X.dtype)
-        centroids[0] = X[self.rng.integers(N)]                  # first center: uniform random
-        for i in range(1, self.k):
-            d = pairwise_sq_dist(X, centroids[:i])              # (N, i) to chosen centers
+        N = len(X)
+        centroids = [X[np.random.randint(N)]]                   # first center: uniform random
+        for _ in range(1, self.k):
+            d = pairwise_sq_dist(X, np.array(centroids))        # (N, #chosen)
             nearest = d.min(axis=1)                             # (N,)
             total = nearest.sum()
             if total > 0:
                 probs = nearest / total                         # (N,) sums to 1
             else:                                               # all points identical to a center
                 probs = np.full(N, 1.0 / N)
-            chosen = self.rng.choice(N, p=probs)
-            centroids[i] = X[chosen]
-        return centroids
+            centroids.append(X[np.random.choice(N, p=probs)])
+        return np.array(centroids)                              # (K, D)
 
     # ---- step 2: assignment ----
     def _assign(self, X: np.ndarray) -> np.ndarray:
@@ -342,7 +257,7 @@ class KMeans:
         for j in range(self.k):
             members = X[labels == j]                            # (n_j, D)
             if len(members) == 0:                               # empty cluster: mean of [] would be NaN
-                new[j] = X[self.rng.integers(len(X))]
+                new[j] = X[np.random.randint(len(X))]
             else:
                 new[j] = members.mean(axis=0)
         return new

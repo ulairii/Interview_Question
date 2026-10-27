@@ -49,6 +49,7 @@ def nms(boxes, scores, thr=0.5):
 - **3D 旋转框（BEV + yaw）**：旋转矩阵得 4 角点 → Sutherland-Hodgman 裁剪两个凸四边形得交集多边形 → 按极角排序 → 鞋带公式 `S=½|Σ(xᵢyᵢ₊₁-xᵢ₊₁yᵢ)|` → 乘高度交集。
 - 与 torchvision 的 `box_iou / generalized_box_iou / nms` 对照（本机装有时）。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

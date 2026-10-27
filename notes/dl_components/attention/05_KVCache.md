@@ -242,6 +242,7 @@ print(all(np.allclose(attn(x[:, t:t + 1], context=enc, kv_cache=ctx_cache)[0],
                       attn(x[:, t:t + 1], context=enc)[0]) for t in range(7)))   # True
 ```
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 

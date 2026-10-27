@@ -22,6 +22,7 @@ gamma = exp(lp - lse)
 - K-Means 是 GMM 的特例（`Σ=σ²I`、σ→0、硬分配）。
 - 单个分量坍缩到一个点（`Σ→0`，似然→∞）是 GMM 的病态，靠 reg 缓解。
 
+
 <!-- ANSWER-START -->
 ## ✅ 标准答案
 
@@ -38,9 +39,8 @@ import numpy as np
 
 class GMM:
     def __init__(self, n_components: int = 3, max_iters: int = 100, tol: float = 1e-4,
-                 reg: float = 1e-6, seed: int = 0) -> None:
+                 reg: float = 1e-6) -> None:
         self.k, self.max_iters, self.tol, self.reg = n_components, max_iters, tol, reg
-        self.rng = np.random.default_rng(seed)
         self.mu: np.ndarray                                     # (K, D)
         self.cov: np.ndarray                                    # (K, D, D)
         self.pi: np.ndarray                                     # (K,)
@@ -80,7 +80,7 @@ class GMM:
     def fit(self, X: np.ndarray) -> "GMM":
         """X: (N, D) float. Returns self."""
         N, D = X.shape
-        self.mu = X[self.rng.choice(N, self.k, replace=False)]  # (K, D) random data points
+        self.mu = X[np.random.choice(N, self.k, replace=False)]  # (K, D) random data points
         self.cov = np.stack([np.eye(D)] * self.k)               # (K, D, D)
         self.pi = np.full(self.k, 1.0 / self.k)                 # (K,)
         prev = -np.inf
